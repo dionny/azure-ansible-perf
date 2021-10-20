@@ -1,0 +1,17 @@
+- hosts: azure
+  vars:
+    ansible_user: azureuser
+    ansible_password: "{{ vm_password }}"
+    ansible_connection: winrm
+    ansible_winrm_transport: ntlm
+    ansible_winrm_server_cert_validation: ignore
+  tasks:
+    - name: Delete VM
+      delegate_to: localhost
+      vars:
+        ansible_connection: local
+      azure_rm_virtualmachine:
+        resource_group: "{{ hostvars[inventory_hostname].resource_group }}"
+        name: "{{ ansible_facts.hostname }}"
+        network_interfaces: "{{ ansible_facts.hostname }}-nic"
+        state: absent

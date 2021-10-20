@@ -1,0 +1,137 @@
+- hosts: azure
+
+  vars:
+    ansible_user: azureuser
+    ansible_password: "{{ vm_password }}"
+    ansible_connection: winrm
+    ansible_winrm_transport: ntlm
+    ansible_winrm_server_cert_validation: ignore
+
+  tasks:
+
+    - name: Enable Developer Mode
+      win_regedit:
+        path: HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock
+        name: AllowDevelopmentWithoutDevLicense
+        data: 1
+        type: dword
+
+    - name: Allow PowerShell Scripts
+      win_shell: 'Set-ExecutionPolicy unrestricted'
+
+    - name: Disable IPv6 (Temporary)
+      win_shell: 'Disable-NetAdapterBinding -Name "Ethernet" -ComponentID ms_tcpip6'
+
+    - name: Install NodeJS
+      win_chocolatey:
+        name: "nodejs-lts"
+        state: present
+
+    - name: Install JDK8
+      win_chocolatey:
+        name: "adoptopenjdk8jre"
+        state: present
+
+    - name: Interactive registry key1
+      win_regedit:
+        path: HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon
+        name: DefaultUserName
+        data: '{{ ansible_user }}'
+        type: string
+
+    - name: Interactive registry key2
+      win_regedit:
+        path: HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon
+        name: DefaultPassword
+        data: '{{ ansible_password }}'
+        type: string
+
+    - name: Interactive registry key3
+      win_regedit:
+        path: HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon
+        name: AutoAdminLogon
+        data: '1'
+        type: string
+
+    - name: Install Git
+      win_chocolatey:
+        name: "git"
+        state: present
+
+    - name: Install Nginx
+      win_chocolatey:
+        name: "nginx"
+        state: present
+
+    - name: Install Python
+      win_chocolatey:
+        name: "python"
+        state: present
+
+    - name: Install PsExec
+      win_chocolatey:
+        name: "pstools"
+        state: present
+
+    - name: Install Edge
+      win_chocolatey:
+        name: "microsoft-edge"
+        state: present
+
+    - name: Install Appium
+      win_command: '"C:\Program Files\nodejs\npm.cmd" install -g appium'
+
+    - name: Firewall rule to allow Python on TCP port 8080
+      win_firewall_rule:
+        name: Python8080
+        localport: 8080
+        action: allow
+        direction: in
+        protocol: tcp
+        state: present
+        enabled: yes
+
+    - name: Firewall rule to allow Automator on TCP port 9090
+      win_firewall_rule:
+        name: Java9090
+        localport: 9090
+        action: allow
+        direction: in
+        protocol: tcp
+        state: present
+        enabled: yes
+
+    - name: Firewall rule to allow Nginx on TCP port 5000
+      win_firewall_rule:
+        name: Nginx5000
+        localport: 5000
+        action: allow
+        direction: in
+        protocol: tcp
+        state: present
+        enabled: yes
+
+    - name: Firewall rule to allow Node on TCP port 4723
+      win_firewall_rule:
+        name: Node4723
+        localport: 4723
+        action: allow
+        direction: in
+        protocol: tcp
+        state: present
+        enabled: yes
+
+    - name: Ensure WinRM starts when the system has settled and is ready to work reliably
+      win_service:
+        name: WinRM
+        start_mode: delayed
+
+    - name: Disable privacy experience
+      win_regedit:
+        path: HKLM:\SOFTWARE\Policies\Microsoft\Windows\OOBE
+        name: DisablePrivacyExperience
+        data: 1
+        type: dword
+
+    - name: Enable IPv6
+      win_shell: 'Enable-NetAdapterBinding -Name "Ethernet" -ComponentID ms_tcpip6'

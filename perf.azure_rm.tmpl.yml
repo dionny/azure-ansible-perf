@@ -1,0 +1,10 @@
+plugin: azure_rm
+
+auth_source: auto
+
+include_vm_resource_groups:
+- REPLACE_RESOURCE_GROUP
+
+conditional_groups:
+  # Creates an inventory group called "azure" with all hosts retrieved by this plugin
+  azure: true
